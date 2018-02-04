@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.springbootactiviti.mapper.CompMapper" >
+  <resultMap id="BaseResultMap" type="com.example.springbootactiviti.entity.Comp" >
+    <id column="COMP_ID" property="compId" jdbcType="INTEGER" />
+    <result column="COMP_NAME" property="compName" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    COMP_ID, COMP_NAME
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from comp
+    where COMP_ID = #{compId,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from comp
+    where COMP_ID = #{compId,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.example.springbootactiviti.entity.Comp" >
+    insert into comp (COMP_ID, COMP_NAME)
+    values (#{compId,jdbcType=INTEGER}, #{compName,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.example.springbootactiviti.entity.Comp" >
+    insert into comp
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="compId != null" >
+        COMP_ID,
+      </if>
+      <if test="compName != null" >
+        COMP_NAME,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="compId != null" >
+        #{compId,jdbcType=INTEGER},
+      </if>
+      <if test="compName != null" >
+        #{compName,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.example.springbootactiviti.entity.Comp" >
+    update comp
+    <set >
+      <if test="compName != null" >
+        COMP_NAME = #{compName,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where COMP_ID = #{compId,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.example.springbootactiviti.entity.Comp" >
+    update comp
+    set COMP_NAME = #{compName,jdbcType=VARCHAR}
+    where COMP_ID = #{compId,jdbcType=INTEGER}
+  </update>
+</mapper>

@@ -1,0 +1,115 @@
+1、绑定启动流程的当前用户
+         在启动流程时，先调用 下面的api 来绑定流程启动人
+[java] view plain copy
+identityService.setAuthenticatedUserId(user);
+   2、获取流程实例的启动人
+
+[java] view plain copy
+public String getStartUserId(String taskId) {
+      Task task =
+              taskService.createTaskQuery()
+                         .taskId(taskId)
+                         .singleResult();
+      HistoricProcessInstance historicProcessInstance =
+              historyService.createHistoricProcessInstanceQuery()
+                              .processInstanceId(task.getProcessInstanceId())
+                              .singleResult();
+      return historicProcessInstance.getStartUserId();
+  }
+
+小结：  activiti:initiator属性作用：可以把启动流程实例的操作人以变量名(比如"applyUserId")保存到数据库中，需要配合
+        identityService.setAuthenticatedUserId(String userId)方法使用来进行赋值
+        使用Authentication.getAuthenticatedUserId()方法或者
+        使用HistoricProcessInstance实例的getStartUserId()可以获取一个流程实例由哪个用户启动
+
+
+   3、使用任务id获取formKey，即url
+
+[java] view plain copy
+public String findTaskFormKeyByTaskId(String taskId) {
+       TaskFormData taskFormData = formService.getTaskFormData(taskId);
+       return taskFormData.getFormKey();
+   }
+
+
+   4、使用任务id获取businessKey
+
+[java] view plain copy
+public String findBusinessKeyByTaskId(String taskId) throws Exception {
+        ProcessInstance pi =
+                activitiUtilServiceI.findProcessInstanceByTaskId(taskId);
+        String businessKey = pi.getBusinessKey();
+        if(StringUtils.isEmpty(businessKey)){
+            throw new Exception("无法找到任务的BusinessKey");
+        }
+        return businessKey;
+ }
+
+
+   5、组任务拾取
+
+[java] view plain copy
+if(StringUtils.isEmpty(task.getAssignee())){
+          taskService.claim(taskId, currentAssignee);
+      }
+
+   6、查询待办任务
+        (1)等待被签收的任务
+
+[java] view plain copy
+List<Task> list = taskService.createTaskQuery()
+                             .taskCandidateUser("userId")
+                             .list();
+       (2)查询全部任务
+[java] view plain copy
+List<Task> list = taskService.createTaskQuery()
+                 .taskCandidateOrAssigned("userId")
+                 .list();
+      (3)更细致查询全部与给定用户相关的任务
+[java] view plain copy
+TaskQuery query = taskService.createTaskQuery().taskInvolvedUser("userId");
+
+小结：taskInvolvedUser()与taskCandidateUser()的区别就在于前者包含了参与人、候选人，以及属于某个候选组的人，
+           而后者只在候选人、候选组范围内查询
+
+   7、使用任务id查询该activityImpl节点的信息
+[java] view plain copy
+public ActivityImpl findActivitiImpl(String taskId, String activityId)
+                throws Exception {
+        ProcessDefinitionEntity processDefinition =
+                findProcessDefinitionEntityByTaskId(taskId);
+        if (StringUtils.isEmpty(activityId)) {
+            activityId = findTaskById(taskId).getTaskDefinitionKey();
+        }
+        ActivityImpl activityImpl =
+                ((ProcessDefinitionImpl) processDefinition)
+                .findActivity(activityId);
+        return activityImpl;
+}
+8、查询流程批注信息
+[java] view plain copy
+public List<Comment> findCommentByTaskId(String taskId) {
+       Task task =
+               taskService.createTaskQuery()
+                           .taskId(taskId)
+                           .singleResult();
+       List<Comment> list = taskService.getProcessInstanceComments(task.getProcessInstanceId());
+       return list;
+   }
+9、添加流程批注信息
+[java] view plain copy
+Task task =
+                taskService.createTaskQuery()
+                            .taskId(taskId)
+                            .singleResult();
+ taskService.addComment(taskId, task.getProcessInstanceId(), message);
+10、获取表单属性控制
+[java] view plain copy
+TaskFormData taskFormData = formService.getTaskFormData(taskId);
+List<FormProperty> formPropertiesList = taskFormData.getFormProperties();
+11、获取变量值
+[java] view plain copy
+public Object getVariablesByTask(String taskId,String variableName){
+       Object variable = taskService.getVariable(taskId, variableName);
+       return variable;
+   }
